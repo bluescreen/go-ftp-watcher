@@ -43,35 +43,42 @@ var entries []*ftp.Entry
 func main() {
 	fmt.Println("Starting ...")
 	initFirestore()
+	defer firestoreClient.Close()
 
+	lastUpdated := make([]time.Time, 4, 4)
 	for {
 		fmt.Println("Polling Data")
-		run()
+		run(lastUpdated)
 		time.Sleep(1e10)
 	}
 }
 
-func run() {
+func run(lastUpdated []time.Time) {
 	connectFTP()
 	data := readFileList()
-	for _, entry := range data {
-		download(entry)
+	for i, entry := range data {
+		if strings.Contains(entry.Name, "txt") {
+			previousUpdate := lastUpdated[i-1]
+			if entry.Time.After(previousUpdate) {
+				match := download(entry)
+				lastUpdated[i-1] = entry.Time
+				fmt.Println("Update", entry.Time, match)
+				storeMatch(match, i)
+			} else {
+				fmt.Println("Last updated", previousUpdate)
+			}
+		}
 	}
-	//storeMatches()
 	closeFTP()
 }
 
-func storeMatches() {
+func storeMatch(match Match, n int) {
 	colref := firestoreClient.Collection("matches")
-
-	for n, match := range matches {
-		result, err := colref.Doc("Shiaijo"+toCharStrConst(n+1)).Set(ctx, match)
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Println(result, match)
+	result, err := colref.Doc("Shiaijo"+toCharStrConst(n+1)).Set(ctx, match)
+	if err != nil {
+		log.Fatal(err)
 	}
-	defer firestoreClient.Close()
+	fmt.Println(n, result, match)
 }
 
 func toCharStrConst(i int) string {
@@ -125,11 +132,7 @@ func initFirestore() {
 	fmt.Println("firebase app is initialized.")
 }
 
-func download(entry *ftp.Entry) {
-	if !strings.Contains(entry.Name, "txt") {
-		return
-	}
-
+func download(entry *ftp.Entry) Match {
 	r, err := ftpClient.Retr(entry.Name)
 	defer r.Close()
 	if err != nil {
@@ -146,6 +149,7 @@ func download(entry *ftp.Entry) {
 	}
 	match := makeMatch(records[0])
 	matches = append(matches, &match)
+	return match
 }
 
 func makeMatch(record []string) Match {
