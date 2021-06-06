@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/csv"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -39,19 +38,26 @@ var ctx = context.Background()
 var ftpClient *ftp.ServerConn
 
 var matches []*Match
+var entries []*ftp.Entry
 
 func main() {
 	fmt.Println("Starting ...")
 	initFirestore()
 
+	for {
+		fmt.Println("Polling Data")
+		run()
+		time.Sleep(1e10)
+	}
+}
+
+func run() {
 	connectFTP()
-	var data []*ftp.Entry
-	data = readFileList()
+	data := readFileList()
 	for _, entry := range data {
 		download(entry)
 	}
-	storeMatches()
-	fmt.Println(matches)
+	//storeMatches()
 	closeFTP()
 }
 
@@ -94,13 +100,12 @@ func closeFTP() {
 }
 
 func readFileList() []*ftp.Entry {
-	var data []*ftp.Entry
 	// Do something with the FTP conn
-	data, err := ftpClient.List("/")
+	entries, err := ftpClient.List("/")
 	if err != nil {
 		log.Fatal(err)
 	}
-	return data
+	return entries
 }
 
 func initFirestore() {
@@ -139,9 +144,12 @@ func download(entry *ftp.Entry) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	match := makeMatch(records[0])
+	matches = append(matches, &match)
+}
 
-	record := records[0]
-	match := Match{
+func makeMatch(record []string) Match {
+	return Match{
 		Shiaijo:         record[0],
 		Pool:            record[1],
 		Fight:           record[2],
@@ -157,17 +165,4 @@ func download(entry *ftp.Entry) {
 		NumberTareRed:   record[12],
 		NameTareRed:     record[13],
 	}
-	matches = append(matches, &match)
-
-}
-
-func StructToMap(obj interface{}) (newMap map[string]interface{}, err error) {
-	data, err := json.Marshal(obj) // Convert to a json string
-
-	if err != nil {
-		return
-	}
-
-	err = json.Unmarshal(data, &newMap) // Convert to a map
-	return
 }
