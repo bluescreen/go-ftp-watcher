@@ -23,6 +23,7 @@ var pollInterval time.Duration = 3 * time.Second
 
 var firebaseConfig *firebase.Config = &firebase.Config{ProjectID: "project-4117648448"}
 var firestoreClient *firestore.Client
+var firestoreCredentialsFile = "ekc-stream-firebase-adminsdk-ses37-27da0fc036.json"
 var ctx = context.Background()
 var ftpClient *ftp.ServerConn
 
@@ -122,8 +123,6 @@ func closeFTP() {
 }
 
 func readFileList() []*ftp.Entry {
-	//entries := make([]*ftp.Entry, 4)
-	// Do something with the FTP conn
 	entries, err := ftpClient.List("/")
 	check(err)
 	return entries
@@ -131,7 +130,7 @@ func readFileList() []*ftp.Entry {
 
 func initFirestore() {
 
-	opt := option.WithCredentialsFile("ekc-stream-firebase-adminsdk-ses37-27da0fc036.json")
+	opt := option.WithCredentialsFile(firestoreCredentialsFile)
 
 	app, err := firebase.NewApp(ctx, nil, opt)
 	check(err)
