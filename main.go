@@ -34,12 +34,18 @@ var entries []*ftp.Entry
 
 func main() {
 	fmt.Println("Starting ...")
-
+	initEventLog()
 	lastUpdated := readLastUpdated()
 	for {
 		run(lastUpdated)
 		time.Sleep(pollInterval)
 	}
+}
+
+func initEventLog() {
+	file, err := os.OpenFile("events.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	check(err)
+	log.SetOutput(file)
 }
 
 func run(lastUpdated []time.Time) {
@@ -61,6 +67,7 @@ func run(lastUpdated []time.Time) {
 				match := download(entry)
 				lastUpdated[i-1] = entry.Time
 				fmt.Println(number, "Update", entry.Time.Format(dateLayout), match)
+				log.Println(number, "Update", match)
 				storeMatch(match, i)
 			} else {
 				fmt.Println(number, "Last update", previousUpdate.Format(dateLayout))
