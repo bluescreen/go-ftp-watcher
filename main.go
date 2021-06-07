@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"os"
+	"os/exec"
 	"strings"
 	"time"
 
@@ -30,23 +32,20 @@ var ftpClient *ftp.ServerConn
 var matches []*Match
 var entries []*ftp.Entry
 
-func init() {
-	fmt.Println("Init")
-
-}
-
 func main() {
 	fmt.Println("Starting ...")
 
 	lastUpdated := readLastUpdated()
 	for {
-		fmt.Println("Polling Data", time.Now().Format(dateLayout))
 		run(lastUpdated)
 		time.Sleep(pollInterval)
 	}
 }
 
 func run(lastUpdated []time.Time) {
+	clearTerminal()
+	fmt.Println("Polling Data", time.Now().Format(dateLayout))
+
 	initFirestore()
 	defer firestoreClient.Close()
 
@@ -64,13 +63,20 @@ func run(lastUpdated []time.Time) {
 				fmt.Println(number, "Update", entry.Time.Format(dateLayout), match)
 				storeMatch(match, i)
 			} else {
-				fmt.Println(number, "Last updated", previousUpdate.Format(dateLayout))
+				fmt.Println(number, "Last update", previousUpdate.Format(dateLayout))
 			}
 		}
 	}
 
 	storeLastUpdated(lastUpdated)
 	closeFTP()
+
+}
+
+func clearTerminal() {
+	cmd := exec.Command("clear")
+	cmd.Stdout = os.Stdout
+	cmd.Run()
 }
 
 func readLastUpdated() []time.Time {
@@ -129,16 +135,12 @@ func readFileList() []*ftp.Entry {
 }
 
 func initFirestore() {
-
 	opt := option.WithCredentialsFile(firestoreCredentialsFile)
-
 	app, err := firebase.NewApp(ctx, nil, opt)
 	check(err)
 
 	firestoreClient, err = app.Firestore(ctx)
 	check(err)
-
-	fmt.Println("firebase app is initialized.")
 }
 
 func download(entry *ftp.Entry) Match {
