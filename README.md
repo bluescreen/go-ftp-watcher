@@ -5,7 +5,12 @@ Polls event data from FTP Server and writes them to firebase service.
 Keeps track of last modification timestamp to avoid unnecessary write operations.
 
 Build
-> go build
+```
+go build
+```
 
-Run
-> go run .
+Run main routine
+```
+go run .
+```
+
