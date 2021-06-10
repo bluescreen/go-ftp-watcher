@@ -11,6 +11,6 @@ go build
 
 Run main routine
 ```
-go run .
+go run ./src
 ```
 
