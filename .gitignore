@@ -4,3 +4,4 @@ data/
 *.sum
 *.txt
 *.log
+go-ftp-watcher
