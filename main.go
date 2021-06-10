@@ -17,15 +17,8 @@ import (
 	"google.golang.org/api/option"
 )
 
-var ftpConfig = "127.0.0.1:8082"
-var ftpUser = "anonymous"
-var ftpPassword = "anonymous"
-var dateLayout = "2006-01-02 15:04:05"
-var pollInterval time.Duration = 3 * time.Second
-
-var firebaseConfig *firebase.Config = &firebase.Config{ProjectID: "project-4117648448"}
+var firebaseConfig *firebase.Config = &firebase.Config{ProjectID: firestoreProjectId}
 var firestoreClient *firestore.Client
-var firestoreCredentialsFile = "ekc-stream-firebase-adminsdk-ses37-27da0fc036.json"
 var ctx = context.Background()
 var ftpClient *ftp.ServerConn
 
@@ -38,7 +31,7 @@ func main() {
 	lastUpdated := readLastUpdated()
 	for {
 		run(lastUpdated)
-		time.Sleep(pollInterval)
+		time.Sleep(time.Duration(pollInterval) * time.Second)
 	}
 }
 
@@ -65,9 +58,11 @@ func run(lastUpdated []time.Time) {
 			previousUpdate := lastUpdated[i-1]
 			if entry.Time.After(previousUpdate) {
 				match := download(entry)
+				event := makeEvent(number, match)
 				lastUpdated[i-1] = entry.Time
 				fmt.Println(number, "Update", entry.Time.Format(dateLayout), match)
-				log.Println(number, "Update", match)
+				log.Println(event.Description)
+				// trackEvent(event)
 				storeMatch(match, i)
 			} else {
 				fmt.Println(number, "Last update", previousUpdate.Format(dateLayout))
@@ -78,6 +73,53 @@ func run(lastUpdated []time.Time) {
 	storeLastUpdated(lastUpdated)
 	closeFTP()
 
+}
+
+func trackEvent(event Event) {
+	/*
+		err := client.Track("13793", "Signed Up", map[string]interface{}{
+			"Referred By": "Friend",
+		})*/
+}
+
+func makeEvent(number string, match Match) Event {
+
+	//pointsRed := []string{"foo", "bar", "hello"}
+	//ointsWhite := []string{"foo", "bar", "world"}
+
+	// type = Start, ScoreRed, ScoreWhite, Hansoku, Encho, Finished
+
+	//Pool 8, Fight 2 on Shiaijo A. Furl vs. Somame. Furl could achieve two men (M),
+	//Somame could achieve a tsuki (T). Furl has already has a hikiwake as well (h)
+	description := fmt.Sprintf("Pool %d, Fight %s on Shiaijo %s. %s vs %s",
+		match.Pool, match.Fight, match.Shiaijo, match.NameTareRed,
+		match.NumberTareWhite)
+
+	return Event{
+		Type:        "Start",
+		Description: description,
+	}
+
+}
+
+func difference(slice1 []string, slice2 []string) []string {
+	diffStr := []string{}
+	m := map[string]int{}
+
+	for _, s1Val := range slice1 {
+		m[s1Val] = 1
+	}
+	for _, s2Val := range slice2 {
+		m[s2Val] = m[s2Val] + 1
+	}
+
+	for mKey, mVal := range m {
+		if mVal == 1 {
+			diffStr = append(diffStr, mKey)
+		}
+	}
+
+	return diffStr
 }
 
 func clearTerminal() {
@@ -108,6 +150,7 @@ func storeLastUpdated(lastUpdated []time.Time) {
 }
 
 func storeMatch(match Match, n int) {
+	// TODO:  https://github.com/dukex/mixpanel
 	colref := firestoreClient.Collection("matches")
 	result, err := colref.Doc("Shiaijo"+toCharStrConst(n+1)).Set(ctx, match)
 	check(err)
@@ -156,8 +199,11 @@ func download(entry *ftp.Entry) Match {
 	check(err)
 
 	buf, err := ioutil.ReadAll(r)
+	return ParseMatch(string(buf))
+}
 
-	reader := csv.NewReader(strings.NewReader(string(buf)))
+func ParseMatch(data string) Match {
+	reader := csv.NewReader(strings.NewReader(data))
 	reader.Comma = ';'
 
 	records, err := reader.ReadAll()

@@ -1,10 +1,23 @@
 package main
 
-import "time"
+import (
+	"strconv"
+	"time"
+)
+
+type Event struct {
+	Type        string
+	Description string
+	Payload     string
+}
+
+func (Event) String() string {
+	return ""
+}
 
 type Match struct {
 	Shiaijo         string
-	Pool            string
+	Pool            int
 	Fight           string
 	NumberTareWhite string
 	NameTareWhite   string
@@ -47,9 +60,10 @@ type TeamMatch struct {
 }
 
 func MakeMatch(record []string) Match {
+	poolNumber, _ := strconv.Atoi(record[1])
 	return Match{
 		Shiaijo:         record[0],
-		Pool:            record[1],
+		Pool:            poolNumber,
 		Fight:           record[2],
 		NumberTareWhite: record[3],
 		NameTareWhite:   record[4],
