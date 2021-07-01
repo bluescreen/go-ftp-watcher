@@ -5,3 +5,4 @@ data/
 *.txt
 *.log
 go-ftp-watcher
+authperm.db/*
