@@ -21,12 +21,16 @@ func ParseMatch(data string) MatchInterface {
 	}
 }
 
+func parseInt(str string) int {
+	number, _ := strconv.Atoi(str)
+	return number
+}
+
 func MakeMatch(record []string) Match {
-	poolNumber, _ := strconv.Atoi(record[1])
 	return Match{
 		Shiaijo:         record[0],
-		Pool:            poolNumber,
-		Fight:           record[2],
+		Pool:            parseInt(record[1]),
+		Fight:           parseInt(record[2]),
 		NumberTareWhite: record[3],
 		NameTareWhite:   record[4],
 		HansokuWhite:    record[5],
@@ -45,8 +49,8 @@ func MakeMatch(record []string) Match {
 func MakeTeamMatch(record []string) TeamMatch {
 	return TeamMatch{
 		Shiaijo:             record[0],
-		Pool:                record[1],
-		Fight:               record[2],
+		Pool:                parseInt(record[1]),
+		Fight:               parseInt(record[2]),
 		NumberTareWhite:     record[3],
 		NameTareWhite:       record[4],
 		HansokuWhite:        record[5],

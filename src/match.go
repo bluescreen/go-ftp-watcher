@@ -23,7 +23,7 @@ type MatchInterface interface {
 type Match struct {
 	Shiaijo         string
 	Pool            int
-	Fight           string
+	Fight           int
 	NumberTareWhite string
 	NameTareWhite   string
 	HansokuWhite    string
@@ -43,15 +43,15 @@ func (m Match) Table() string {
 }
 
 func (m Match) Description() string {
-	return fmt.Sprintf("Pool %d, Fight %s on Shiaijo %s. %s vs %s",
+	return fmt.Sprintf("Pool %d, Fight %d on Shiaijo %s. %s vs %s",
 		m.Pool, m.Fight, m.Shiaijo, m.NameTareRed,
 		m.NumberTareWhite)
 }
 
 type TeamMatch struct {
 	Shiaijo             string
-	Pool                string
-	Fight               string
+	Pool                int
+	Fight               int
 	NumberTareWhite     string
 	NameTareWhite       string
 	HansokuWhite        string
@@ -79,7 +79,7 @@ func (m TeamMatch) Table() string {
 }
 
 func (m TeamMatch) Description() string {
-	return fmt.Sprintf("Pool %s, Fight %s on Shiaijo %s. %s vs %s",
+	return fmt.Sprintf("Pool %d, Fight %d on Shiaijo %s. %s vs %s",
 		m.Pool, m.Fight, m.Shiaijo, m.NameTareRed,
 		m.NumberTareWhite)
 }
